@@ -9,11 +9,15 @@ import enum
 
 import websockets
 from websockets.framing import OP_CLOSE, parse_close, OP_PING, OP_PONG
+from packaging import version as v
 
 logger = logging.getLogger(__name__)
 
 V6_DEFAULT_TIMEOUT = 10
 V6_DEFAULT_PING_INTERVAL = 300
+
+WS_VERSION_AC = v.parse("7.0")
+WS_VERSION_CUR = v.parse(websockets.__version__)
 
 class InvalidState(Exception):
     """
@@ -120,7 +124,7 @@ class SonoffLANModeClientProtocol(websockets.WebSocketClientProtocol):
 
         logger.debug("__init__()" )
 
-        if float(websockets.__version__) < 7.0:
+        if WS_VERSION_CUR < WS_VERSION_AC: 
 
             self.ping_interval = V6_DEFAULT_PING_INTERVAL
             self.ping_timeout = V6_DEFAULT_TIMEOUT
@@ -139,7 +143,7 @@ class SonoffLANModeClientProtocol(websockets.WebSocketClientProtocol):
 
         super().connection_open()
 
-        if float(websockets.__version__) < 7.0:
+        if WS_VERSION_CUR < WS_VERSION_AC:
 
             # Start the task that sends pings at regular intervals.
             self.keepalive_ping_task = asyncio.ensure_future(
@@ -151,7 +155,7 @@ class SonoffLANModeClientProtocol(websockets.WebSocketClientProtocol):
 
         logger.debug("keepalive_ping()" )
 
-        if float(websockets.__version__) >= 7.0:
+        if WS_VERSION_CUR < WS_VERSION_AC:
 
             super().keepalive_ping()
 
@@ -206,7 +210,7 @@ class SonoffLANModeClientProtocol(websockets.WebSocketClientProtocol):
 
         logger.debug("super.close_connection() finished" )
 
-        if float(websockets.__version__) < 7.0:
+        if WS_VERSION_CUR < WS_VERSION_AC:
 
             # Cancel the keepalive ping task.
             if self.keepalive_ping_task is not None:
@@ -218,7 +222,7 @@ class SonoffLANModeClientProtocol(websockets.WebSocketClientProtocol):
 
         logger.debug("abort_keepalive_pings()")
 
-        if float(websockets.__version__) >= 7.0:
+        if WS_VERSION_CUR >= WS_VERSION_AC:
             super().abort_keepalive_pings()
 
         else:
@@ -255,7 +259,7 @@ class SonoffLANModeClientProtocol(websockets.WebSocketClientProtocol):
 
         logger.debug("connection_lost()" )
 
-        if float(websockets.__version__) < 7.0:
+        if WS_VERSION_CUR < WS_VERSION_AC:
 
             logger.debug("%s - event = connection_lost(%s)", self.side, exc)
             self.state = State.CLOSED
@@ -322,7 +326,7 @@ class SonoffLANModeClient:
                           websocket_address)
 
         try:
-            if float(websockets.__version__) >= 7.0:
+            if WS_VERSION_CUR >= WS_VERSION_AC:
                 self.websocket = await websockets.connect(
                     websocket_address,
                     ping_interval=self.ping_interval,
