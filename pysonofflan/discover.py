@@ -5,6 +5,15 @@ import threading
 from itertools import chain
 from typing import Dict
 
+import socket
+
+local_ip_ranges = []
+for ip in socket.gethostbyname_ex(socket.gethostname())[2]:
+    rip = ip.split(".")
+    rip = f"{rip[0]}.{rip[1]}.{rip[2]}"
+    for i in range(0, 254):
+        local_ip_ranges.append(f"{rip}.{i}")
+
 
 class Discover:
     SONOFF_PORT = 8081
@@ -27,12 +36,6 @@ class Discover:
         threads = []
 
         try:
-            local_ip_ranges = chain(
-                ipaddress.IPv4Network('127.0.0.1/32'),
-                ipaddress.IPv4Network('192.168.0.0/24'),
-                ipaddress.IPv4Network('192.168.1.0/24')
-            )
-
             # Spawn thread per IP address to scan
             for ip in local_ip_ranges:
                 t = threading.Thread(target=Discover.probe_ip,
